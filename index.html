@@ -1,0 +1,77 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Awais AI</title>
+<style>
+body{margin:0;background:#0b1220;color:white;font-family:Arial}
+header{padding:20px;background:#14243b;text-align:center}
+h1{color:#55c8ff;margin:5px}
+main{max-width:600px;margin:auto;padding:15px}
+#chat{height:55vh;overflow:auto;background:#14243b;padding:12px;border-radius:15px}
+.msg{padding:12px;margin:9px 0;border-radius:12px;white-space:pre-wrap}
+.user{background:#17517a;text-align:right}
+.ai{background:#26364d}
+input,textarea{width:100%;box-sizing:border-box;padding:13px;margin-top:10px;border-radius:10px;border:1px solid #456;background:#14243b;color:white}
+button{padding:13px;border:0;border-radius:10px;background:#55c8ff;color:#071321;font-weight:bold;margin-top:10px}
+.send{width:100%}
+small{color:#aabbd0}
+</style>
+</head>
+<body>
+<header>
+<h1>✦ AWAIS AI</h1>
+<small>Your Personal AI Assistant</small>
+</header>
+<main>
+<h3>Assalam-o-Alaikum Awais!</h3>
+<div id="chat">
+<div class="msg ai">Main Awais AI hoon. Apna API key set karein aur mujh se baat shuru karein.</div>
+</div>
+<h3>AI Settings</h3>
+<input id="key" type="password" placeholder="Gemini API Key">
+<button onclick="saveKey()">Save API Key</button>
+<small id="status">API key not connected</small>
+<textarea id="question" rows="2" placeholder="Apna sawal likhein..."></textarea>
+<button class="send" onclick="sendMessage()">Send Message ➤</button>
+</main>
+<script>
+function saveKey(){
+let k=document.getElementById('key').value.trim();
+if(!k){alert('API key enter karein');return;}
+localStorage.setItem('awais_key',k);
+document.getElementById('status').innerText='API key saved on this device';
+}
+async function sendMessage(){
+let q=document.getElementById('question').value.trim();
+let key=localStorage.getItem('awais_key');
+if(!key){alert('Pehle API key save karein');return;}
+if(!q)return;
+let chat=document.getElementById('chat');
+chat.innerHTML+='<div class="msg user"></div>';
+chat.lastChild.textContent=q;
+document.getElementById('question').value='';
+let reply=document.createElement('div');
+reply.className='msg ai';
+reply.textContent='Soch raha hoon...';
+chat.appendChild(reply);
+try{
+let r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key='+encodeURIComponent(key),{
+method:'POST',
+headers:{'Content-Type':'application/json'},
+body:JSON.stringify({
+systemInstruction:{parts:[{text:'You are Awais AI, a helpful personal assistant. Reply in Roman Urdu when the user uses Roman Urdu. Be honest and helpful.'}]},
+contents:[{parts:[{text:q}]}]
+})
+});
+let data=await r.json();
+if(!r.ok)throw Error(data.error?.message||'API error');
+reply.textContent=data.candidates?.[0]?.content?.parts?.map(x=>x.text||'').join('')||'No answer received';
+}catch(e){reply.textContent='Error: '+e.message;}
+chat.scrollTop=chat.scrollHeight;
+}
+</script>
+</body>
+</html>
