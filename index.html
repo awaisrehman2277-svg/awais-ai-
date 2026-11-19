@@ -6,122 +6,69 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#0b1220">
 <title>Awais AI</title>
-
 <style>
 *{box-sizing:border-box}
-body{
- margin:0;background:#0b1220;color:#f2f6ff;
- font-family:Arial,sans-serif
-}
-header{
- background:#14243b;padding:20px 12px;
- text-align:center;border-bottom:1px solid #263b56
-}
+body{margin:0;background:#0b1220;color:#f2f6ff;font-family:Arial,sans-serif}
+header{background:#14243b;padding:20px;text-align:center}
 header h1{color:#55c8ff;font-size:32px;margin:5px}
-header p{color:#aabbd0;margin:8px}
+header p{color:#aabbd0}
 main{max-width:700px;margin:auto;padding:16px}
-h2{font-size:22px}
-#chat{
- height:48vh;min-height:300px;overflow-y:auto;
- background:#14243b;padding:14px;border-radius:20px;
- display:flex;flex-direction:column;gap:10px
-}
-.msg{
- padding:13px;border-radius:15px;
- white-space:pre-wrap;overflow-wrap:anywhere;
- line-height:1.5
-}
+#chat{height:48vh;min-height:300px;overflow-y:auto;background:#14243b;padding:14px;border-radius:18px;display:flex;flex-direction:column;gap:10px}
+.msg{padding:13px;border-radius:15px;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.5}
 .user{background:#17577e;align-self:flex-end;max-width:90%}
 .ai{background:#293b54;align-self:flex-start;max-width:95%}
-textarea,input{
- width:100%;padding:14px;margin-top:10px;
- border-radius:12px;border:1px solid #405574;
- background:#14243b;color:white;font-size:16px
-}
+textarea,input{width:100%;padding:14px;margin-top:10px;border-radius:12px;border:1px solid #405574;background:#14243b;color:white;font-size:16px}
 textarea{resize:vertical}
-button{
- padding:13px;border:0;border-radius:12px;
- background:#55c8ff;color:#071321;
- font-size:16px;font-weight:bold;cursor:pointer;
- margin-top:10px
-}
+button{padding:13px;border:0;border-radius:12px;background:#55c8ff;color:#071321;font-size:16px;font-weight:bold;margin-top:10px}
 button:disabled{opacity:.5}
 .full{width:100%}
 .secondary{background:#293b54;color:white}
 .status{color:#aabbd0;font-size:13px;margin-top:8px}
-details{
- background:#14243b;padding:14px;border-radius:14px;
- margin:18px 0
-}
+details{background:#14243b;padding:14px;border-radius:14px;margin:18px 0}
 summary{cursor:pointer;font-weight:bold}
 small{color:#aabbd0;line-height:1.5}
 footer{text-align:center;color:#8195ad;padding:20px}
 </style>
 </head>
-
 <body>
-
 <header>
 <h1>✦ AWAIS AI</h1>
 <p>Your Personal AI Assistant</p>
 </header>
-
 <main>
-
 <h2>Assalam-o-Alaikum Awais!</h2>
 
 <div id="chat">
-<div class="msg ai">
-Assalam-o-Alaikum! Main Awais AI hoon.
-
-Aap mujh se Roman Urdu, Urdu ya English mein baat kar sakte hain.
-
-Main aapki madad ke liye tayyar hoon!
-</div>
+<div class="msg ai">Assalam-o-Alaikum! Main Awais AI hoon.
+Roman Urdu, Urdu aur English mein baat kar sakta hoon.
+Aapki madad ke liye tayyar hoon!</div>
 </div>
 
 <div class="status" id="status">AI disconnected</div>
 
 <details>
 <summary>⚙️ AI Settings</summary>
-
 <label>Gemini API Key</label>
-<input id="apiKey" type="password"
-placeholder="Apni Gemini API key paste karein">
-
+<input id="apiKey" type="password" placeholder="Gemini API Key">
 <button class="full" id="saveKey">Save API Key</button>
-
-<button class="full secondary" id="removeKey">
-Remove API Key
-</button>
-
-<p class="status" id="keyStatus">
-API key not connected
-</p>
-
-<small>
-API key is browser mein save hoti hai.
-Is key ko GitHub code mein kabhi mat dalna.
-</small>
+<button class="full secondary" id="removeKey">Remove API Key</button>
+<p class="status" id="keyStatus">API key not connected</p>
+<small>API key sirf is browser ke local storage mein save hoti hai. Isay kisi ke saath share na karein.</small>
 </details>
 
-<textarea id="question" rows="3"
-placeholder="Apna sawal likhein..."></textarea>
-
+<textarea id="question" rows="3" placeholder="Apna sawal likhein..."></textarea>
 <button class="full" id="send">Send Message ➤</button>
+<button class="full secondary" id="clear">Clear Chat</button>
 
-<button class="full secondary" id="clear">
-Clear Chat
-</button>
-
-<footer>
-Awais AI · Personal Assistant
-</footer>
-
+<footer>Awais AI · Personal Assistant</footer>
 </main>
 
 <script>
-const MODEL = "gemini-3.8-flash";
+const MODELS = [
+ "gemini-3.8-flash",
+ "gemini-3.5-flash-lite",
+ "gemini-3.1-flash-lite"
+];
 
 const chat = document.getElementById("chat");
 const question = document.getElementById("question");
@@ -132,155 +79,170 @@ const sendButton = document.getElementById("send");
 
 let history = [];
 
-function addMessage(text, type) {
- const div = document.createElement("div");
- div.className = "msg " + type;
- div.textContent = text;
+function addMessage(text,type){
+ const div=document.createElement("div");
+ div.className="msg "+type;
+ div.textContent=text;
  chat.appendChild(div);
- chat.scrollTop = chat.scrollHeight;
+ chat.scrollTop=chat.scrollHeight;
  return div;
 }
 
-function updateKeyStatus() {
- const saved = localStorage.getItem("awais_key");
- keyStatus.textContent = saved
+function updateStatus(){
+ const saved=localStorage.getItem("awais_key");
+ keyStatus.textContent=saved
  ? "API key saved on this device"
  : "API key not connected";
- status.textContent = saved ? "AI ready to connect" : "AI disconnected";
+ status.textContent=saved
+ ? "Ready to connect"
+ : "AI disconnected";
 }
 
-apiKey.value = "";
-updateKeyStatus();
+apiKey.value="";
+updateStatus();
 
-document.getElementById("saveKey").onclick = () => {
- const key = apiKey.value.trim();
-
- if (!key) {
-  alert("API key enter karein");
-  return;
- }
-
- localStorage.setItem("awais_key", key);
- apiKey.value = "";
- updateKeyStatus();
+document.getElementById("saveKey").onclick=()=>{
+ const key=apiKey.value.trim();
+ if(!key){alert("API key enter karein");return;}
+ localStorage.setItem("awais_key",key);
+ apiKey.value="";
+ updateStatus();
  alert("API key saved!");
 };
 
-document.getElementById("removeKey").onclick = () => {
+document.getElementById("removeKey").onclick=()=>{
  localStorage.removeItem("awais_key");
- apiKey.value = "";
- updateKeyStatus();
+ apiKey.value="";
+ updateStatus();
  alert("API key removed");
 };
 
-async function sendMessage() {
- const text = question.value.trim();
- const key = localStorage.getItem("awais_key");
-
- if (!key) {
-  alert("Pehle API key save karein");
-  return;
- }
-
- if (!text || sendButton.disabled) return;
-
- addMessage(text, "user");
- question.value = "";
-
- const reply = addMessage("Awais AI soch raha hai...", "ai");
-
- sendButton.disabled = true;
- status.textContent = "Connecting to Gemini...";
-
- const nextHistory = [
-  ...history,
+async function askModel(model,key,messages){
+ const response=await fetch(
+  "https://generativelanguage.googleapis.com/v1beta/models/"
+  +model+":generateContent",
   {
-   role: "user",
-   parts: [{text: text}]
-  }
- ];
-
- try {
-  const response = await fetch(
-   "https://generativelanguage.googleapis.com/v1beta/models/"
-   + MODEL + ":generateContent?key="
-   + encodeURIComponent(key),
-   {
-    method: "POST",
-    headers: {
-     "Content-Type": "application/json"
+   method:"POST",
+   headers:{
+    "Content-Type":"application/json",
+    "x-goog-api-key":key
+   },
+   body:JSON.stringify({
+    systemInstruction:{
+     parts:[{
+      text:"You are Awais AI, a helpful personal AI assistant. Reply in Roman Urdu when the user writes Roman Urdu. Help with coding, business, learning and daily tasks. Be honest about your abilities. Never claim to perform actions you cannot perform."
+     }]
     },
-    body: JSON.stringify({
-     systemInstruction: {
-      parts: [{
-       text:
-       "You are Awais AI, a helpful personal AI assistant. "
-       + "Reply in Roman Urdu when the user writes Roman Urdu. "
-       + "You can help with coding, learning, business and daily tasks. "
-       + "Be honest. Never claim to perform actions you cannot perform."
-      }]
-     },
-     contents: nextHistory,
-     generationConfig: {
-      temperature: 0.7,
-      maxOutputTokens: 1500
-     }
-    })
-   }
+    contents:messages,
+    generationConfig:{
+     temperature:0.7,
+     maxOutputTokens:1500
+    }
+   })
+  }
+ );
+
+ const data=await response.json();
+
+ if(!response.ok){
+  const error=new Error(
+   data.error?.message || "API request failed"
   );
-
-  const data = await response.json();
-
-  if (!response.ok) {
-   throw new Error(
-    data.error?.message || "Gemini API request failed"
-   );
-  }
-
-  const answer = data.candidates?.[0]?.content?.parts
-   ?.map(part => part.text || "")
-   .join("")
-   .trim();
-
-  if (!answer) {
-   throw new Error("AI returned an empty response");
-  }
-
-  reply.textContent = answer;
-  history = [
-   ...nextHistory,
-   {
-    role: "model",
-    parts: [{text: answer}]
-   }
-  ];
-
-  status.textContent = "Connected · " + MODEL;
-
- } catch (error) {
-  reply.textContent = "Error: " + error.message;
-  status.textContent = "Connection failed";
+  error.status=response.status;
+  throw error;
  }
 
- sendButton.disabled = false;
- chat.scrollTop = chat.scrollHeight;
+ const answer=data.candidates?.[0]?.content?.parts
+  ?.map(part=>part.text||"").join("").trim();
+
+ if(!answer)throw new Error("Empty response from AI");
+
+ return answer;
 }
 
-sendButton.onclick = sendMessage;
+async function sendMessage(){
+ const text=question.value.trim();
+ const key=localStorage.getItem("awais_key");
 
-question.addEventListener("keydown", event => {
- if (event.key === "Enter" && !event.shiftKey) {
+ if(!key){alert("Pehle API key save karein");return;}
+ if(!text || sendButton.disabled)return;
+
+ addMessage(text,"user");
+ question.value="";
+
+ const reply=addMessage("Awais AI soch raha hai...","ai");
+ sendButton.disabled=true;
+
+ const messages=[
+  ...history,
+  {role:"user",parts:[{text:text}]}
+ ];
+
+ let answer=null;
+ let usedModel=null;
+ let errors=[];
+
+ for(let i=0;i<MODELS.length;i++){
+  const model=MODELS[i];
+
+  status.textContent="Trying "+model+"...";
+
+  try{
+   answer=await askModel(model,key,messages);
+   usedModel=model;
+   break;
+  }catch(error){
+   errors.push(model+": "+error.message);
+
+   const retryable=[
+    404,408,429,500,502,503,504
+   ].includes(error.status);
+
+   if(!retryable){
+    reply.textContent="Error: "+error.message;
+    status.textContent="Request failed";
+    sendButton.disabled=false;
+    return;
+   }
+
+   status.textContent=
+    model+" unavailable. Trying backup model...";
+  }
+ }
+
+ if(answer){
+  reply.textContent=answer;
+
+  history.push(
+   {role:"user",parts:[{text:text}]},
+   {role:"model",parts:[{text:answer}]}
+  );
+
+  status.textContent="Connected · "+usedModel;
+ }else{
+  reply.textContent=
+   "All AI models failed.\n\n"+errors.join("\n\n");
+  status.textContent="All models unavailable";
+ }
+
+ sendButton.disabled=false;
+ chat.scrollTop=chat.scrollHeight;
+}
+
+sendButton.onclick=sendMessage;
+
+question.addEventListener("keydown",event=>{
+ if(event.key==="Enter"&&!event.shiftKey){
   event.preventDefault();
   sendMessage();
  }
 });
 
-document.getElementById("clear").onclick = () => {
- history = [];
- chat.innerHTML = "";
- addMessage("Chat clear ho gayi. Nayi guftagu shuru karein!", "ai");
+document.getElementById("clear").onclick=()=>{
+ history=[];
+ chat.innerHTML="";
+ addMessage("Chat clear ho gayi. Nayi guftagu shuru karein!","ai");
 };
 </script>
-
 </body>
 </html>
