@@ -3,221 +3,89 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#0b1220">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Awais AI</title>
 <style>
-*{box-sizing:border-box}
 body{margin:0;background:#0b1220;color:white;font-family:Arial}
-header{padding:22px;background:#14243b;text-align:center}
+header{padding:20px;background:#14243b;text-align:center}
 h1{color:#55c8ff;margin:5px}
-main{max-width:700px;margin:auto;padding:16px}
-#chat{height:48vh;min-height:300px;overflow:auto;background:#14243b;padding:14px;border-radius:18px;display:flex;flex-direction:column;gap:10px}
-.msg{padding:13px;border-radius:14px;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.5}
-.user{background:#17577e;align-self:flex-end;max-width:90%}
-.ai{background:#293b54;align-self:flex-start;max-width:95%}
-input,textarea{width:100%;padding:14px;margin-top:10px;border-radius:12px;border:1px solid #405574;background:#14243b;color:white;font-size:16px}
-button{width:100%;padding:14px;margin-top:10px;border:0;border-radius:12px;background:#55c8ff;color:#071321;font-size:16px;font-weight:bold}
-button:disabled{opacity:.5}
-.secondary{background:#293b54;color:white}
-.status{color:#aabbd0;margin:12px 0;font-size:14px}
-details{background:#14243b;padding:15px;border-radius:14px;margin:18px 0}
-summary{font-weight:bold;cursor:pointer}
+main{max-width:600px;margin:auto;padding:15px}
+#chat{height:55vh;overflow:auto;background:#14243b;padding:12px;border-radius:15px}
+.msg{padding:12px;margin:9px 0;border-radius:12px;white-space:pre-wrap}
+.user{background:#17517a;text-align:right}
+.ai{background:#26364d}
+textarea{width:100%;box-sizing:border-box;padding:13px;margin-top:10px;border-radius:10px;border:1px solid #456;background:#14243b;color:white}
+button{padding:13px;border:0;border-radius:10px;background:#55c8ff;color:#071321;font-weight:bold;margin-top:10px}
+.send{width:100%}
+small{color:#aabbd0}
 </style>
 </head>
 <body>
 <header>
 <h1>✦ AWAIS AI</h1>
-<p>Your Personal AI Assistant</p>
+<small>Your Personal AI Assistant</small>
 </header>
 <main>
-<h2>Assalam-o-Alaikum Awais!</h2>
-
+<h3>Assalam-o-Alaikum!</h3>
 <div id="chat">
-<div class="msg ai">Assalam-o-Alaikum! Main Awais AI hoon. Roman Urdu, Urdu aur English mein baat kar sakta hoon. Aapki madad ke liye tayyar hoon!</div>
+<div class="msg ai">Main Awais AI hoon. Mujh se baat shuru karein!</div>
 </div>
-
-<div class="status" id="status">AI disconnected</div>
-
-<details>
-<summary>⚙️ AI Settings</summary>
-<input id="key" type="password" placeholder="Gemini API Key">
-<button id="save">Save API Key</button>
-<button class="secondary" id="remove">Remove API Key</button>
-<div class="status" id="keyStatus"></div>
-</details>
-
+<p><small id="status">Backend connection ready</small></p>
 <textarea id="question" rows="3" placeholder="Apna sawal likhein..."></textarea>
-<button id="send">Send Message ➤</button>
-<button class="secondary" id="clear">Clear Chat</button>
+<button class="send" id="sendBtn" onclick="sendMessage()">Send Message ➤</button>
 </main>
-
 <script>
-const MODELS=[
- "gemini-3.8-flash",
- "gemini-3.5-flash-lite",
- "gemini-3.1-flash-lite"
-];
-
-const chat=document.getElementById("chat");
-const question=document.getElementById("question");
-const status=document.getElementById("status");
-const send=document.getElementById("send");
-let history=[];
-
-function message(text,type){
- const d=document.createElement("div");
- d.className="msg "+type;
- d.textContent=text;
- chat.appendChild(d);
- chat.scrollTop=chat.scrollHeight;
- return d;
-}
-
-function keyStatus(){
- document.getElementById("keyStatus").textContent=
- localStorage.getItem("awais_key")
- ?"API key saved on this device":"API key not connected";
-}
-
-document.getElementById("save").onclick=()=>{
- const k=document.getElementById("key").value.trim();
- if(!k)return alert("API key enter karein");
- localStorage.setItem("awais_key",k);
- document.getElementById("key").value="";
- keyStatus();
- alert("API key saved!");
-};
-
-document.getElementById("remove").onclick=()=>{
- localStorage.removeItem("awais_key");
- keyStatus();
-};
-
-keyStatus();
-
-async function callAI(model,key,contents){
- const controller=new AbortController();
- const timer=setTimeout(()=>controller.abort(),25000);
-
- try{
-  const r=await fetch(
-   "https://generativelanguage.googleapis.com/v1beta/models/"
-   +model+":generateContent",
-   {
-    method:"POST",
-    signal:controller.signal,
-    headers:{
-     "Content-Type":"application/json",
-     "x-goog-api-key":key
-    },
-    body:JSON.stringify({
-     systemInstruction:{
-      parts:[{
-       text:"You are Awais AI, a helpful personal assistant. Reply in Roman Urdu when the user writes Roman Urdu. Help with coding, business, learning and daily tasks. Be honest about your abilities."
-      }]
-     },
-     contents:contents,
-     generationConfig:{
-      temperature:0.7,
-      maxOutputTokens:1000
-     }
-    })
-   }
-  );
-
-  const data=await r.json();
-
-  if(!r.ok){
-   const e=new Error(data.error?.message||"API error");
-   e.code=r.status;
-   throw e;
-  }
-
-  const answer=data.candidates?.[0]?.content?.parts
-   ?.map(p=>p.text||"").join("").trim();
-
-  if(!answer)throw new Error("AI returned no answer");
-  return answer;
-
- }finally{
-  clearTimeout(timer);
- }
-}
+const API_URL = "https://awais-ai-backend.awaisrehman2277.workers.dev/";
 
 async function sendMessage(){
- const q=question.value.trim();
- const key=localStorage.getItem("awais_key");
+ const input=document.getElementById("question");
+ const btn=document.getElementById("sendBtn");
+ const chat=document.getElementById("chat");
+ const status=document.getElementById("status");
+ const q=input.value.trim();
 
- if(!key)return alert("Pehle API key save karein");
- if(!q||send.disabled)return;
+ if(!q)return;
 
- message(q,"user");
- question.value="";
+ const user=document.createElement("div");
+ user.className="msg user";
+ user.textContent=q;
+ chat.appendChild(user);
 
- const reply=message("Awais AI soch raha hai...","ai");
- const contents=[
-  ...history,
-  {role:"user",parts:[{text:q}]}
- ];
+ input.value="";
+ btn.disabled=true;
+ btn.textContent="Please wait...";
+ status.textContent="Awais AI soch raha hai...";
 
- send.disabled=true;
- let answer=null;
- let selected=null;
- let errors=[];
+ const reply=document.createElement("div");
+ reply.className="msg ai";
+ reply.textContent="Jawab aa raha hai...";
+ chat.appendChild(reply);
+ chat.scrollTop=chat.scrollHeight;
 
  try{
-  for(const model of MODELS){
-   status.textContent="Trying "+model+"...";
+  const response=await fetch(API_URL,{
+   method:"POST",
+   headers:{"Content-Type":"application/json"},
+   body:JSON.stringify({message:q})
+  });
 
-   try{
-    answer=await callAI(model,key,contents);
-    selected=model;
-    break;
-   }catch(e){
-    errors.push(model+": "+e.message);
-    status.textContent="Trying backup model...";
+  const data=await response.json();
 
-    if(e.code===400||e.code===403||e.code===401){
-     throw new Error(e.message);
-    }
-   }
+  if(!response.ok){
+   throw new Error(data.error || "Server error");
   }
 
-  if(!answer){
-   throw new Error("All models failed:\n"+errors.join("\n"));
-  }
-
-  reply.textContent=answer;
-  history.push(
-   {role:"user",parts:[{text:q}]},
-   {role:"model",parts:[{text:answer}]}
-  );
-  status.textContent="Connected: "+selected;
-
- }catch(e){
-  reply.textContent="Connection Error:\n"+e.message;
-  status.textContent="Connection failed";
+  reply.textContent=data.reply || "Jawab nahi mila.";
+  status.textContent="Awais AI connected";
+ }catch(error){
+  reply.textContent="Error: "+error.message;
+  status.textContent="Connection error";
  }finally{
-  send.disabled=false;
+  btn.disabled=false;
+  btn.textContent="Send Message ➤";
   chat.scrollTop=chat.scrollHeight;
  }
 }
-
-send.onclick=sendMessage;
-
-question.addEventListener("keydown",e=>{
- if(e.key==="Enter"&&!e.shiftKey){
-  e.preventDefault();
-  sendMessage();
- }
-});
-
-document.getElementById("clear").onclick=()=>{
- history=[];
- chat.innerHTML="";
- message("Nayi guftagu shuru karein!","ai");
-};
 </script>
 </body>
 </html>
